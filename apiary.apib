@@ -1,9 +1,12 @@
 FORMAT: 1A
 HOST: https://idm.c3-pro.org/
 
-# c3-pro-idm
+# C3-PRO IDM API
 
-The C3-PRO Identidy & Demographics Manager (IDM) is a headless server allowing to store participants (patients) in order to create a link between user-ids from various systems.
+The C3-PRO Identidy & Demographics Manager (IDM) is an API for server systems that allow to store participants (patients, subjects) in order to create a link between user-ids from various systems.
+Participants are identified by a so-called _site-specific subject id_ (`SSSID`).
+
+This documentation lists the minimal API and data models that any IDM-compatible system must support.
 
 
 ## Participants [/patients]
@@ -11,6 +14,7 @@ The C3-PRO Identidy & Demographics Manager (IDM) is a headless server allowing t
 ### List Participants [GET]
 
 List all participants registered with the system.
+All fields but `sssid` and `name` are optional.
 
 + Response 200 (application/json)
 
@@ -65,4 +69,3 @@ Add a new participant to the system with manually assigned `SSSID`.
                     "message": "this SSSID is already taken"
                 }
             }
-    
