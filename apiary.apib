@@ -1,0 +1,68 @@
+FORMAT: 1A
+HOST: https://idm.c3-pro.org/
+
+# c3-pro-idm
+
+The C3-PRO Identidy & Demographics Manager (IDM) is a headless server allowing to store participants (patients) in order to create a link between user-ids from various systems.
+
+
+## Participants [/patients]
+
+### List Participants [GET]
+
+List all participants registered with the system.
+
++ Response 200 (application/json)
+
+    + Body
+    
+            {
+                "data": [
+                    {
+                        "sssid": "12340",
+                        "name": "Jane Doe"
+                    },
+                    {
+                        "sssid": "12341",
+                        "name": "Thomas Jane"
+                    }
+                ]
+            }
+
+### Add Participant [POST]
+
+Add a new participant to the system with manually assigned `SSSID`.
+
++ Request (application/json)
+
+        {
+            "sssid": "12345",
+            "name": "John Doe"
+        }
+
++ Response 201 (application/json)
+
+    + Headers
+
+            Location: /patients/12345
+
+    + Body
+
+            {
+                "data": {
+                    "sssid": "12345",
+                    "name": "John Doe"
+                }
+            }
+
++ Response 409 (application/json)
+
+    + Body
+        
+            {
+                "error": {
+                    "status": 409,
+                    "message": "this SSSID is already taken"
+                }
+            }
+    
