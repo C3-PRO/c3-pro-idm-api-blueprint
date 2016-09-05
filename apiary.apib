@@ -19,11 +19,39 @@ All fields but `sssid` and `name` are optional.
 
 TODO: determine fields
 
+
+## Data Structures
+
+### Subject
+
+- sssid: Site Specific Subject ID (string, required)
+- name:  John Doe                 (required)
+- bday:  `1954-12-10`             (required)
+
+### Link
+
+- jti:  3524E85B               (string, required)
+- iss:  https://idm.srv.io/    (required)
+- exp:  `2016-09-06T14:13:12Z` (required)
+- sub:  "John Doe"             (required)
+- birthdate: `1954-12-10`      (required)
+
+
 ## Subjects [/subject]
+
++ Attributes (Subject)
 
 ### List Subjects [GET]
 
 TODO: paging?
+
++ Request
+    
+    + Headers
+        
+            Authorization: Bearer {...}
+    
+    + Body
 
 + Response 200 (application/json)
 
@@ -31,25 +59,20 @@ TODO: paging?
     
             {
                 "data": [
-                    {
-                        "sssid": "12340",
-                        "name": "Jane Doe"
-                    },
-                    {
-                        "sssid": "12341",
-                        "name": "Thomas Jane"
-                    }
+                    (Subject),
+                    (Subject)
                 ]
             }
 
 ### Add New Subject [POST]
 
 + Request (application/json)
-
-        {
-            "sssid": "12345",
-            "name": "John Doe"
-        }
+    
+    + Headers
+        
+            Authorization: Bearer {...}
+    
+    + Attributes (Subject)
 
 + Response 201 (application/json)
 
@@ -63,8 +86,7 @@ TODO: paging?
 
             {
                 "data": {
-                    "sssid": "12345",
-                    "name": "John Doe"
+                    (Subject)
                 }
             }
 
@@ -93,16 +115,23 @@ TODO: paging?
                     "message": "this SSSID is already taken"
                 }
             }
-        
+
 
 ## Individual Subject [/subject/{sssid}]
 
 Operations on an already registered subject, identified by `sssid`.
 
 + Parameters
-    + sssid (string) - The site-specific subject ID
+    
+    - sssid (string) - The site-specific subject ID
 
 ### Retrieve Subject Details [GET]
+
++ Request
+    
+    + Headers
+            
+            Authorization: Bearer {...}
 
 + Response 200 (application/json)
     
@@ -110,9 +139,20 @@ Operations on an already registered subject, identified by `sssid`.
         
             {
                 "data": {
-                    "sssid": "12345",
-                    "name": "John Doe",
-                    ...
+                    (Subject)
+                }
+            }
+
++ Response 401 (application/json)
+
+    The authorization token was invalid.
+    
+    + Body
+        
+            {
+                "error": {
+                    "status": 401,
+                    "message": "Unauthorized"
                 }
             }
     
@@ -133,12 +173,11 @@ Operations on an already registered subject, identified by `sssid`.
 
 + Request (application/json)
 
-    + Body
-        
-            {
-                "sssid": "12345",
-                "name": "John Doe the 3rd"
-            }
+    + Headers
+            
+            Authorization: Bearer {...}
+    
+    + Attributes (Subject)
 
 + Response 204
 
@@ -159,6 +198,19 @@ Operations on an already registered subject, identified by `sssid`.
                 }
             }
 
++ Response 401 (application/json)
+
+    The authorization token was invalid.
+    
+    + Body
+        
+            {
+                "error": {
+                    "status": 401,
+                    "message": "Unauthorized"
+                }
+            }
+
 + Response 409 (application/json)
 
     There was a conflict updating the subject, most commonly the SSSID was attempted to be changed.
@@ -171,3 +223,104 @@ Operations on an already registered subject, identified by `sssid`.
                     "message": "SSSID cannot be changed"
                 }
             }
+
+
+# Group Subject Linking
+
+Linking is achieved by creating a one-time-use “Link”, which is always represented as a [JWT](https://jwt.io).
+These JWT can be sent to external services and apps, who can establish links by using the JWT as an _Authorization_ header while sending a FHIR `Patient` resource, containing the identifier to be linked, in its body.
+
+When a `Link` is returned, it is in the form of a JWT, usually created using **HMAC-SHA-256**.
+
+
+## Links [/link/{jti}]
+
++ Parameters
+
+    - jti (String) - The linkable/JWT identifier; should not give hints about the sssid.
+
++ Attributes (Link)
+
+### Establish Link [PUT]
+
++ Request (application/json)
+    
+    The request body is a FHIR `Patient` resource that only needs to include the identifier.
+    Provide a `system` for the identifier, which is the URI identifying the App or Service to be linked.
+    The `value` is the **id** to be linked.
+    
+    + Headers
+        
+            Authorization: Bearer {Link JWT with matching jti}
+    
+    + Body
+    
+            {
+                "resourceType": "Patient",
+                "identifier": [
+                    "system": "{system-uri}",
+                    "value": "{secondary-id}"
+                ]
+            }
+        
++ Response 204
+
+    Link was successfully created. Nothing will be returned.
+    
+    + Body
+
++ Response 400 (application/json)
+
+    Something was wrong with the request.
+    
+    + Body
+        
+            {
+                "error": {
+                    "status": 400,
+                    "message": "{error message}"
+                }
+            }
+
++ Response 409 (application/json)
+
+    There was a conflict creating the link.
+    Most commonly this link (one time use!) or a link between SSSID and an identifier of the given **system** has already been established.
+    
+    + Body
+        
+            {
+                "error": {
+                    "status": 409,
+                    "message": "SSSID is already linked to this system"
+                }
+            }
+
+## Links For Subjects [/subject/{sssid}/link]
+
++ Parameters
+    
+    - sssid (string) - The site-specific subject ID
+
+### Get New Linkable [POST]
+
+A request to receive a new JWT that can be used by another application or system in order to establish a link between the subject's `sssid` and an external identifier.
+
++ Request (application/json)
+
+    + Headers
+            
+            Authorization: Bearer {...}
+
++ Response 200 (application/jwt)
+
+    + Headers
+        
+            Location: /link/{jti}
+    
+    + Attributes (Link)
+    
+    + Body
+        
+            JWT-encoded Link
+            
