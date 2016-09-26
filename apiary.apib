@@ -16,8 +16,8 @@ This documentation lists the minimal API and data models that any IDM-compatible
 ## Subject (object)
 
 - sssid: 57592DDC     (string, required) - Site Specific Subject ID
-- name:  John Doe     (required)
-- bday:  `1954-12-10` (required)
+- name:  John Doe     (string, required)
+- bday:  `1954-12-10` (string, required)
 
 ## Subject Response (object)
 
@@ -29,13 +29,14 @@ This documentation lists the minimal API and data models that any IDM-compatible
 
 ## Link (object)
 
-- jti:  3524E85B               (string, required)
-- iss:  https://idm.srv.io/    (required)
-- exp:  `2016-09-06T14:13:12Z` (required) - Expiration date & time
-- sub:  "John Doe"             (required)
-- birthdate: `1954-12-10`      (required)
-- linked_with: "SSSID"         (string)
-- linked_on: `2016-09-28T14:22:23Z`
+- jti:  3524E85B               (string, required) - The internal Link identifier
+- iss:  https://idm.srv.io/    (string) - The URL of the issuing IDM
+- aud:  https://idm.srv.io/    (string) - The URL where the link will be accepted
+- exp:  `2016-09-06T14:13:12Z` (string) - Expiration date & time; if this is present a JWT has been generated and can not be re-generated for this link
+- sub:  57592DDC               (string, required) - The SSSID this Link belongs to; will be replaced with the subject's name in the JWT!
+- birthdate: `1954-12-10`      (string) - The birthdate of the subject; will be pulled from `Subject` upon JWT generation
+- linked_to: UUUID             (string) - The external ID (usually the App's UUID) this link links to
+- linked_on: `2016-09-28T14:22:23Z` (string) - When this link was established (if at all)
 
 ## Link Response (object)
 
@@ -176,6 +177,12 @@ Operations on an already registered subject, identified by `sssid`.
 Linking is achieved by creating a one-time-use “Link”, which is always represented as a [JWT](https://jwt.io) when used outside the system.
 These JWT can be sent to external services and apps, who can establish links by using the JWT as an _Authorization_ header while sending a FHIR `Patient` resource, containing the identifier to be linked, in its body.
 
+It is important to understand the distinction between the Link data, when working with the API internally, and the JWT representation of the Link:
+data contained in the Link internally will end up in the _payload_ section of the JWT, with the following exceptions:
+
+- `sub` will be replaced with the subject's name (it's the SSSID internally)
+- `linked_on` and `linked_to` will not end up in the payload; usually they are not known when the JWT is needed anyway
+
 A `Link`'s JWT is usually signed using **HMAC-SHA-256**.
 
 
@@ -187,7 +194,7 @@ A `Link`'s JWT is usually signed using **HMAC-SHA-256**.
 
 + Attributes (Link)
 
-### Information about a Link [GET]
+### Information About a Link [GET]
 
 + Request (application/json)
 
@@ -200,6 +207,62 @@ A `Link`'s JWT is usually signed using **HMAC-SHA-256**.
 + Response 200 (application/json)
     + Attributes (Link Response)
 
+### Update Link Content [PUT]
+
++ Request (application/json)
+    + Headers
+        
+            Authorization: Bearer {...}
+    
+    + Attributes (Link)
+        
++ Response 204
+
+    Link was successfully updated. Nothing will be returned.
+    
+    + Body
+
++ Response 400 (application/json)
+
+    Something was wrong with the request.
+    
+    + Attributes (Error Response)
+
++ Response 409 (application/json)
+
+    There was a conflict updating the link.
+    
+    + Attributes (Error Response)
+
+
+## Link as JSON Web Token [/link/{jti}/jwt]
+
++ Parameters
+
+    - jti (String) - The linkable/JWT identifier.
+
+### Retrieve JWT [GET]
+
++ Request
+
+    This is an open request that does not need to be protected.
+    
+    + Body
+
++ Response 200 (application/jwt)
+    
+    Returns the JWT in the response body.
+    
+    + Body
+    
+            HEAD.BODY.SIGNATURE
+
++ Response 404 (application/json)
+
+    This link does not exist
+    
+    + Attributes (Error Response)
+
 ### Establish Link [PUT]
 
 + Request (application/json)
@@ -210,7 +273,7 @@ A `Link`'s JWT is usually signed using **HMAC-SHA-256**.
     
     + Headers
         
-            Authorization: Bearer {Link JWT with matching jti}
+            Authorization: Bearer {JWT of this link}
     
     + Body
     
@@ -238,35 +301,6 @@ A `Link`'s JWT is usually signed using **HMAC-SHA-256**.
 
     There was a conflict creating the link.
     Most commonly this link (one time use!) or a link between SSSID and an identifier of the given **system** has already been established.
-    
-    + Attributes (Error Response)
-
-
-## Link as JWT [/link/{jti}/jwt]
-
-+ Parameters
-
-    - jti (String) - The linkable/JWT identifier.
-
-### Retrieve JWT [GET]
-
-+ Request
-
-    This is an open request that does not need to be protected.
-    
-    + Body
-
-+ Response 200 (application/jwt)
-    
-    Returns the JWT in the response body.
-    
-    + Body
-    
-            HEAD.BODY.SIGNATURE
-
-+ Response 404 (application/json)
-
-    This link does not exist
     
     + Attributes (Error Response)
 
