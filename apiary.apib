@@ -15,7 +15,7 @@ This documentation lists the minimal API and data models that any IDM-compatible
 
 A subject (aka. _participant_ or _patient_) is a person (to be) enrolled in a clinical trial.
 
-All fields but `sssid` and `name` are optional.
+All fields but `sssid`, `name` and `bday` are optional.
 
 TODO: determine fields
 
@@ -27,14 +27,6 @@ TODO: determine fields
 - sssid: Site Specific Subject ID (string, required)
 - name:  John Doe                 (required)
 - bday:  `1954-12-10`             (required)
-
-### Link
-
-- jti:  3524E85B               (string, required)
-- iss:  https://idm.srv.io/    (required)
-- exp:  `2016-09-06T14:13:12Z` (required)
-- sub:  "John Doe"             (required)
-- birthdate: `1954-12-10`      (required)
 
 
 ## Subjects [/subject]
@@ -227,11 +219,22 @@ Operations on an already registered subject, identified by `sssid`.
 
 # Group Subject Linking
 
-Linking is achieved by creating a one-time-use “Link”, which is always represented as a [JWT](https://jwt.io).
+Linking is achieved by creating a one-time-use “Link”, which is always represented as a [JWT](https://jwt.io) when used outside the system.
 These JWT can be sent to external services and apps, who can establish links by using the JWT as an _Authorization_ header while sending a FHIR `Patient` resource, containing the identifier to be linked, in its body.
 
-When a `Link` is returned, it is in the form of a JWT, usually created using **HMAC-SHA-256**.
+A `Link`'s JWT is usually signed using **HMAC-SHA-256**.
 
+## Data Structures
+
+### Link
+
+- jti:  3524E85B               (string, required)
+- iss:  https://idm.srv.io/    (required)
+- exp:  `2016-09-06T14:13:12Z` (required)
+- sub:  "John Doe"             (required)
+- birthdate: `1954-12-10`      (required)
+- linked_with: "SSSID"         (string)
+- linked_on: `2016-09-28T14:22:23Z`
 
 ## Links [/link/{jti}]
 
@@ -240,6 +243,26 @@ When a `Link` is returned, it is in the form of a JWT, usually created using **H
     - jti (String) - The linkable/JWT identifier; should not give hints about the sssid.
 
 + Attributes (Link)
+
+### Information about a Link [GET]
+
++ Request (application/json)
+
+    A GET request to retrieve the JSON part of the JWT.
+    
+    + Headers
+        
+            Authorization: Bearer {...}
+
++ Response 200 (application/json)
+
+    + Body
+    
+            {
+                "data": {
+                    (Link)
+                }
+            }
 
 ### Establish Link [PUT]
 
@@ -296,11 +319,66 @@ When a `Link` is returned, it is in the form of a JWT, usually created using **H
                 }
             }
 
-## Links For Subjects [/subject/{sssid}/link]
+## Link as JWT [/link/{jti}/jwt]
+
++ Parameters
+
+    - jti (String) - The linkable/JWT identifier.
+
+### Retrieve JWT [GET]
+
++ Request
+
+    This is an open request that does not need to be protected.
+
++ Response 200 (application/jwt)
+    
+    Returns the JWT in the response body.
+    
+    + Body
+    
+            HEAD.BODY.SIGNATURE
+
++ Response 404 (application/json)
+
+    This link does not exist
+    
+    + Body
+    
+            {
+                "error": {
+                    "status": 404,
+                    "message": "The link with this identifier does not exist"
+                }
+            }
+
+## Links For Subjects [/subject/{sssid}/links]
 
 + Parameters
     
     - sssid (string) - The site-specific subject ID
+
+### Get All Linkables [GET]
+
++ Request
+
+    + Headers
+        
+            Authorization: Bearer {...}
+
++ Response 200 (application/json)
+    
+    List all `Link` objects that are tied to the given subject.
+    
+    + Body
+    
+            {
+                "data": [
+                    (Link),
+                    (Link),
+                    ...
+                ]
+            }
 
 ### Get New Linkable [POST]
 
@@ -322,5 +400,5 @@ A request to receive a new JWT that can be used by another application or system
     
     + Body
         
-            JWT-encoded Link
+            HEAD.BODY.SIGNATURE
             
