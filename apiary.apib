@@ -11,6 +11,43 @@ Most commonly such linking is established between subjects enrolled in a clinica
 This documentation lists the minimal API and data models that any IDM-compatible system must support.
 
 
+# Data Structures
+
+## Subject (object)
+
+- sssid: 57592DDC     (string, required) - Site Specific Subject ID
+- name:  John Doe     (required)
+- bday:  `1954-12-10` (required)
+
+## Subject Response (object)
+
+- data (Subject, required)
+
+## Subjects Response (object)
+
+- data (array[Subject], required)
+
+## Link (object)
+
+- jti:  3524E85B               (string, required)
+- iss:  https://idm.srv.io/    (required)
+- exp:  `2016-09-06T14:13:12Z` (required) - Expiration date & time
+- sub:  "John Doe"             (required)
+- birthdate: `1954-12-10`      (required)
+- linked_with: "SSSID"         (string)
+- linked_on: `2016-09-28T14:22:23Z`
+
+## Link Response (object)
+
+- data (Link, required)
+
+## Error Response (object)
+
+- error (object, required)
+    - status  (number, required) - The HTTP status represented by this error
+    - message (string, required) - A description of the error to help debug
+
+
 # Group Subjects
 
 A subject (aka. _participant_ or _patient_) is a person (to be) enrolled in a clinical trial.
@@ -18,15 +55,6 @@ A subject (aka. _participant_ or _patient_) is a person (to be) enrolled in a cl
 All fields but `sssid`, `name` and `bday` are optional.
 
 TODO: determine fields
-
-
-## Data Structures
-
-### Subject
-
-- sssid: Site Specific Subject ID (string, required)
-- name:  John Doe                 (required)
-- bday:  `1954-12-10`             (required)
 
 
 ## Subjects [/subject]
@@ -38,7 +66,6 @@ TODO: determine fields
 TODO: paging?
 
 + Request
-    
     + Headers
         
             Authorization: Bearer {...}
@@ -46,20 +73,11 @@ TODO: paging?
     + Body
 
 + Response 200 (application/json)
-
-    + Body
-    
-            {
-                "data": [
-                    (Subject),
-                    (Subject)
-                ]
-            }
+    + Attributes (Subjects Response)
 
 ### Add New Subject [POST]
 
 + Request (application/json)
-    
     + Headers
         
             Authorization: Bearer {...}
@@ -74,39 +92,19 @@ TODO: paging?
 
             Location: /subject/12345
 
-    + Body
-
-            {
-                "data": {
-                    (Subject)
-                }
-            }
+    + Attributes (Subject Response)
 
 + Response 400 (appliaciton/json)
 
     Invalid request, likely either `sssid` or `name` was missing or empty.
     
-    + Body
-        
-            {
-                "error": {
-                    "status": 400,
-                    "message": "{error message}"
-                }
-            } 
+    + Attributes (Error Response)
 
 + Response 409 (application/json)
 
     A subject with this `sssid` exists already.
 
-    + Body
-        
-            {
-                "error": {
-                    "status": 409,
-                    "message": "this SSSID is already taken"
-                }
-            }
+    + Attributes (Error Response)
 
 
 ## Individual Subject [/subject/{sssid}]
@@ -120,51 +118,28 @@ Operations on an already registered subject, identified by `sssid`.
 ### Retrieve Subject Details [GET]
 
 + Request
-    
     + Headers
             
             Authorization: Bearer {...}
 
 + Response 200 (application/json)
-    
-    + Body
-        
-            {
-                "data": {
-                    (Subject)
-                }
-            }
+    + Attributes (Subject Response)
 
 + Response 401 (application/json)
 
     The authorization token was invalid.
     
-    + Body
-        
-            {
-                "error": {
-                    "status": 401,
-                    "message": "Unauthorized"
-                }
-            }
+    + Attributes (Error Response)
     
 + Response 404 (application/json)
 
     A subject with the given `sssid` does not exist.
     
-    + Body
-        
-            {
-                "error": {
-                    "status": 404,
-                    "message": "Not Found"
-                }
-            }
+    + Attributes (Error Response)
         
 ### Update Subject [PUT]
 
 + Request (application/json)
-
     + Headers
             
             Authorization: Bearer {...}
@@ -181,40 +156,19 @@ Operations on an already registered subject, identified by `sssid`.
 
     Something was wrong with the request.
     
-    + Body
-        
-            {
-                "error": {
-                    "status": 400,
-                    "message": "{error message}"
-                }
-            }
+    + Attributes (Error Response)
 
 + Response 401 (application/json)
 
     The authorization token was invalid.
     
-    + Body
-        
-            {
-                "error": {
-                    "status": 401,
-                    "message": "Unauthorized"
-                }
-            }
+    + Attributes (Error Response)
 
 + Response 409 (application/json)
 
     There was a conflict updating the subject, most commonly the SSSID was attempted to be changed.
     
-    + Body
-        
-            {
-                "error": {
-                    "status": 409,
-                    "message": "SSSID cannot be changed"
-                }
-            }
+    + Attributes (Error Response)
 
 
 # Group Subject Linking
@@ -224,17 +178,6 @@ These JWT can be sent to external services and apps, who can establish links by 
 
 A `Link`'s JWT is usually signed using **HMAC-SHA-256**.
 
-## Data Structures
-
-### Link
-
-- jti:  3524E85B               (string, required)
-- iss:  https://idm.srv.io/    (required)
-- exp:  `2016-09-06T14:13:12Z` (required)
-- sub:  "John Doe"             (required)
-- birthdate: `1954-12-10`      (required)
-- linked_with: "SSSID"         (string)
-- linked_on: `2016-09-28T14:22:23Z`
 
 ## Links [/link/{jti}]
 
@@ -255,14 +198,7 @@ A `Link`'s JWT is usually signed using **HMAC-SHA-256**.
             Authorization: Bearer {...}
 
 + Response 200 (application/json)
-
-    + Body
-    
-            {
-                "data": {
-                    (Link)
-                }
-            }
+    + Attributes (Link Response)
 
 ### Establish Link [PUT]
 
@@ -296,28 +232,15 @@ A `Link`'s JWT is usually signed using **HMAC-SHA-256**.
 
     Something was wrong with the request.
     
-    + Body
-        
-            {
-                "error": {
-                    "status": 400,
-                    "message": "{error message}"
-                }
-            }
+    + Attributes (Error Response)
 
 + Response 409 (application/json)
 
     There was a conflict creating the link.
     Most commonly this link (one time use!) or a link between SSSID and an identifier of the given **system** has already been established.
     
-    + Body
-        
-            {
-                "error": {
-                    "status": 409,
-                    "message": "SSSID is already linked to this system"
-                }
-            }
+    + Attributes (Error Response)
+
 
 ## Link as JWT [/link/{jti}/jwt]
 
@@ -330,6 +253,8 @@ A `Link`'s JWT is usually signed using **HMAC-SHA-256**.
 + Request
 
     This is an open request that does not need to be protected.
+    
+    + Body
 
 + Response 200 (application/jwt)
     
@@ -343,14 +268,8 @@ A `Link`'s JWT is usually signed using **HMAC-SHA-256**.
 
     This link does not exist
     
-    + Body
-    
-            {
-                "error": {
-                    "status": 404,
-                    "message": "The link with this identifier does not exist"
-                }
-            }
+    + Attributes (Error Response)
+
 
 ## Links For Subjects [/subject/{sssid}/links]
 
@@ -361,7 +280,6 @@ A `Link`'s JWT is usually signed using **HMAC-SHA-256**.
 ### Get All Linkables [GET]
 
 + Request
-
     + Headers
         
             Authorization: Bearer {...}
@@ -370,28 +288,18 @@ A `Link`'s JWT is usually signed using **HMAC-SHA-256**.
     
     List all `Link` objects that are tied to the given subject.
     
-    + Body
-    
-            {
-                "data": [
-                    (Link),
-                    (Link),
-                    ...
-                ]
-            }
+    + Attributes (Subjects Response)
 
 ### Get New Linkable [POST]
 
 A request to receive a new JWT that can be used by another application or system in order to establish a link between the subject's `sssid` and an external identifier.
 
 + Request (application/json)
-
     + Headers
             
             Authorization: Bearer {...}
 
 + Response 200 (application/jwt)
-
     + Headers
         
             Location: /link/{jti}
@@ -401,4 +309,3 @@ A request to receive a new JWT that can be used by another application or system
     + Body
         
             HEAD.BODY.SIGNATURE
-            
