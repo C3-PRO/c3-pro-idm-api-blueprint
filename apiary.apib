@@ -18,6 +18,10 @@ This documentation lists the minimal API and data models that any IDM-compatible
 - sssid: 57592DDC     (string, required) - Site Specific Subject ID
 - name:  John Doe     (string, required)
 - bday:  `1954-12-10` (string, required)
+- date_invited:   `2017-12-10T12:45:30Z` (string)
+- date_consented: `2017-12-12T18:50:45Z` (string)
+- date_enrolled:  `2017-12-12T18:52:12Z` (string)
+- date_withdrawn: `2018-11-04T09:05:03Z` (string)
 
 ## Subject Response (object)
 
@@ -53,7 +57,7 @@ This documentation lists the minimal API and data models that any IDM-compatible
 
 A subject (aka. _participant_ or _patient_) is a person (to be) enrolled in a clinical trial.
 
-All fields but `sssid`, `name` and `bday` are optional.
+A subject may have additional fields to the ones defined here.
 
 TODO: determine fields
 
@@ -168,6 +172,31 @@ Operations on an already registered subject, identified by `sssid`.
 + Response 409 (application/json)
 
     There was a conflict updating the subject, most commonly the SSSID was attempted to be changed.
+    
+    + Attributes (Error Response)
+
+### Mark Subject Consented [PUT]
+
++ Request (application/json)
+    + Headers
+        
+            Authorization: Bearer {...}
+    
++ Response 200
+
+    Subject was marked as consented, full subject data must be returned.
+    
+    + Attributes (Subject)
+
++ Response 400 (application/json)
+
+    Something was wrong with the request.
+    
+    + Attributes (Error Response)
+
++ Response 401 (application/json)
+
+    The authorization token was invalid.
     
     + Attributes (Error Response)
 
@@ -343,3 +372,11 @@ A request to receive a new JWT that can be used by another application or system
     + Body
         
             HEAD.BODY.SIGNATURE
+
++ Response 412 (application/json)
+
+    Failed to create the link.
+    Most commonly the subject has not yet been consented.
+    
+    + Attributes (Error Response)
+
