@@ -18,6 +18,7 @@ This documentation lists the minimal API and data models that any IDM-compatible
 - sssid: 57592DDC     (string, required) - Site Specific Subject ID
 - name:  John Doe     (string, required)
 - bday:  `1954-12-10` (string, required)
+- changed: 112089734  (number) - Timestamp of last change
 - date_invited:   `2017-12-10T12:45:30Z` (string)
 - date_consented: `2017-12-12T18:50:45Z` (string)
 - date_enrolled:  `2017-12-12T18:52:12Z` (string)
@@ -41,6 +42,7 @@ This documentation lists the minimal API and data models that any IDM-compatible
 - birthdate: `1954-12-10`      (string) - The birthdate of the subject; will be pulled from `Subject` upon JWT generation
 - linked_to: UUUID             (string) - The external ID (usually the App's UUID) this link links to
 - linked_on: `2016-09-28T14:22:23Z` (string) - When this link was established (if at all)
+- linked_system: `ch.c-tracker.app` (string) - The system identifier (usually the App identifier) where `linked_to` comes from
 
 ## Link Response (object)
 
@@ -68,14 +70,16 @@ TODO: determine fields
 
 ### List Subjects [GET]
 
-TODO: paging?
-
 + Request
     + Headers
         
             Authorization: Bearer {...}
     
-    + Body
+    + Attributes
+        - page
+        - perpage
+        - ordercol
+        - orderdir
 
 + Response 200 (application/json)
     + Attributes (Subjects Response)
@@ -292,26 +296,29 @@ A `Link`'s JWT is usually signed using **HMAC-SHA-256**.
     
     + Attributes (Error Response)
 
-### Establish Link [PUT]
+
+## Establish Link [/establish]
+
+### Link Subject [POST]
 
 + Request (application/json)
     
-    The request body is a FHIR `Patient` resource that only needs to include the identifier.
+    The request body is a FHIR `Patient` resource that only needs to include the remote patient identifier as the first `Identifier` element.
     Provide a `system` for the identifier, which is the URI identifying the App or Service to be linked.
     The `value` is the **id** to be linked.
     
     + Headers
         
-            Authorization: Bearer {JWT of this link}
+            Authorization: Bearer {JWT of this link, see `/link/{jti}/jwt`}
     
     + Body
     
             {
                 "resourceType": "Patient",
-                "identifier": [
+                "identifier": [{
                     "system": "{system-uri}",
-                    "value": "{secondary-id}"
-                ]
+                    "value": "{patient-id}"
+                }]
             }
         
 + Response 204
@@ -326,6 +333,24 @@ A `Link`'s JWT is usually signed using **HMAC-SHA-256**.
     
     + Attributes (Error Response)
 
++ Response 401 (application/json)
+
+    No authorization was provided.
+    
+    + Attributes (Error Response)
+
++ Response 403 (application/json)
+
+    The JWT provided as authorization is not valid.
+    
+    + Attributes (Error Response)
+
++ Response 406 (application/json)
+
+    The Authorization header or the request body was not correctly formatted.
+    
+    + Attributes (Error Response)
+
 + Response 409 (application/json)
 
     There was a conflict creating the link.
@@ -334,13 +359,13 @@ A `Link`'s JWT is usually signed using **HMAC-SHA-256**.
     + Attributes (Error Response)
 
 
-## Links For Subjects [/subject/{sssid}/links]
+## Subject Links [/subject/{sssid}/links]
 
 + Parameters
     
     - sssid (string) - The site-specific subject ID
 
-### Get All Linkables [GET]
+### Get All Links [GET]
 
 + Request
     + Headers
@@ -353,7 +378,7 @@ A `Link`'s JWT is usually signed using **HMAC-SHA-256**.
     
     + Attributes (Subjects Response)
 
-### Get New Linkable [POST]
+### Get New Link [POST]
 
 A request to receive a new JWT that can be used by another application or system in order to establish a link between the subject's `sssid` and an external identifier.
 
