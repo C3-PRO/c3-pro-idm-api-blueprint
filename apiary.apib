@@ -43,6 +43,7 @@ This documentation lists the minimal API and data models that any IDM-compatible
 - linked_to: UUUID             (string) - The external ID (usually the App's UUID) this link links to
 - linked_on: `2016-09-28T14:22:23Z` (string) - When this link was established (if at all)
 - linked_system: `ch.c-tracker.app` (string) - The system identifier (usually the App identifier) where `linked_to` comes from
+- withdrawn_on: `2018-10-02T09:31:48Z` (string) - When this link was broken, i.e. the user has (been) withdrawn
 
 ## Link Response (object)
 
@@ -277,8 +278,8 @@ This is an open request that does not need to be protected.
 + Request (application/json)
     
     The request body is a FHIR `Patient` resource that only needs to include the remote patient identifier as the first `Identifier` element.
-    Provide a `system` for the identifier, which is the URI identifying the App or Service to be linked.
-    The `value` is the **id** to be linked.
+    Provide a `system` for the identifier, which is the URL of the system to which the subject sends research data to.
+    The `value` is the **in-app id** which is associated with research data.
     
     + Headers
         
@@ -289,8 +290,8 @@ This is an open request that does not need to be protected.
             {
                 "resourceType": "Patient",
                 "identifier": [{
-                    "system": "{system-uri}",
-                    "value": "{patient-id}"
+                    "system": "{data-backend-url}",
+                    "value": "{in-app-id}"
                 }]
             }
         
