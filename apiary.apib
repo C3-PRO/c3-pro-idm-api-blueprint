@@ -49,6 +49,16 @@ This documentation lists the minimal API and data models that any IDM-compatible
 
 - data (Link, required)
 
+## Audit (object)
+
+- datetime: `2017-02-08T14:22:23Z` (string) - ISO date-time of the audit log
+- actor:    Bruce Willis           (string) - A name for the person having caused the audit log
+- action:   consent                (string) - Some description of the action (e.g. "update"; can be more verbose, your choice)
+
+## Audit Response (object)
+
+- data (Audit, required)
+
 ## Error Response (object)
 
 - error (object, required)
@@ -386,4 +396,29 @@ A request to receive a new JWT that can be used by another application or system
     Most commonly the subject has not yet been consented.
     
     + Attributes (Error Response)
+
+
+# Group Audit Logs
+
+These endpoints provide a means to retrieve audit logs for actions done on the data of a particular subject.
+How auditing is done and what is logged is up to you, all that needs to be present is the following endpoint and the data coming back must contain at least the given properties fro `Audit`.
+
+## Subject Audit Logs [/subject/{sssid}/audits]
+
++ Parameters
+    
+    - sssid (string) - The site-specific subject ID
+
+### Get All Logs [GET]
+
++ Request
+    + Headers
+        
+            Authorization: Bearer {...}
+
++ Response 200 (application/json)
+    
+    List all `Audit` objects that are tied to the given subject.
+    
+    + Attributes (Audit Response)
 
