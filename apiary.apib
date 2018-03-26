@@ -15,10 +15,11 @@ This documentation lists the minimal API and data models that any IDM-compatible
 
 ## Subject (object)
 
-- sssid: 57592DDC     (string, required) - Site Specific Subject ID
-- name:  John Doe     (string, required)
-- bday:  `1954-12-10` (string, required)
-- changed: 112089734  (number) - Timestamp of last change
+- sssid:     57592DDC     (string, required) - Site Specific Subject ID
+- name:      John Doe     (string, required)
+- bday:      `1954-12-10` (string, required)
+- created:  `2018-11-04T09:05:03Z`  (string) - ISO-datetime the subject was created
+- changed:  `2018-11-04T09:05:03Z`  (string) - ISO-datetime of last change
 - date_invited:   `2017-12-10T12:45:30Z` (string)
 - date_consented: `2017-12-12T18:50:45Z` (string)
 - date_enrolled:  `2017-12-12T18:52:12Z` (string)
@@ -41,9 +42,9 @@ This documentation lists the minimal API and data models that any IDM-compatible
 - sub:  57592DDC               (string, required) - The SSSID this Link belongs to; will be replaced with the subject's name in the JWT!
 - birthdate: `1954-12-10`      (string) - The birthdate of the subject; will be pulled from `Subject` upon JWT generation
 - linked_to: UUUID             (string) - The external ID (usually the App's UUID) this link links to
-- linked_on: `2016-09-28T14:22:23Z` (string) - When this link was established (if at all)
-- linked_system: `ch.c-tracker.app` (string) - The system identifier (usually the App identifier) where `linked_to` comes from
-- withdrawn_on: `2018-10-02T09:31:48Z` (string) - When this link was broken, i.e. the user has (been) withdrawn
+- linked_on: `2016-09-28T14:22:23Z`   (string) - When this link was established (if at all)
+- linked_system: `https://c3-pro.io/fhir/` (string) - The system against which was linked and where `linked_to` is the identifier; should be a FHIR endpoint
+- withdrawn_on: `2018-10-02T09:31:48Z`     (string) - When this link was broken, i.e. the user has (been) withdrawn
 
 ## Link Response (object)
 
@@ -51,8 +52,8 @@ This documentation lists the minimal API and data models that any IDM-compatible
 
 ## Audit (object)
 
-- datetime: `2017-02-08T14:22:23Z` (string) - ISO date-time of the audit log
-- actor:    Bruce Willis           (string) - A name for the person having caused the audit log
+- datetime: `2017-02-08T14:22:23Z` (string) - ISO datetime of the audit log
+- actor:    Bruce Willis           (string) - A name or identifier for the person having caused the audit log
 - action:   consent                (string) - Some description of the action (e.g. "update"; can be more verbose, your choice)
 
 ## Audit Response (object)
